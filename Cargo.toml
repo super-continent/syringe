@@ -1,9 +1,10 @@
 [package]
 name = "syringe"
+description = "A library providing simple Windows DLL injection and an example injector application"
 version = "0.1.0"
-authors = [""]
+authors = ["super-continent"]
 edition = "2018"
-
+license = "GPLv3"
 [dependencies]
 thiserror = "1"
 winapi = { version = "0.3", features = ["ntdef", "handleapi", "errhandlingapi", "tlhelp32", "processthreadsapi", "securitybaseapi", "winbase", "handleapi", "libloaderapi", "memoryapi"] }
