@@ -4,7 +4,7 @@ description = "A library providing simple Windows DLL injection and an example i
 version = "0.1.0"
 authors = ["super-continent"]
 edition = "2018"
-license = "GPLv3"
+license = "GPL-3.0"
 [dependencies]
 thiserror = "1"
 winapi = { version = "0.3", features = ["ntdef", "handleapi", "errhandlingapi", "tlhelp32", "processthreadsapi", "securitybaseapi", "winbase", "handleapi", "libloaderapi", "memoryapi"] }
