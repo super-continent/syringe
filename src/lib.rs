@@ -6,15 +6,9 @@ pub mod error;
 
 use crate::error::SyringeError;
 
-use std::ffi::{
-    OsString,
-    OsStr,
-    CString
-};
+use std::ffi::{CString, OsStr, OsString};
 use std::mem;
-use std::os::windows::ffi::{
-    OsStrExt, OsStringExt
-};
+use std::os::windows::ffi::{OsStrExt, OsStringExt};
 use std::path::PathBuf;
 use std::ptr;
 
@@ -28,7 +22,8 @@ use winapi::um::{
     processthreadsapi::{CreateRemoteThread, GetCurrentProcess, OpenProcess, OpenProcessToken},
     securitybaseapi::AdjustTokenPrivileges,
     tlhelp32::{
-        CreateToolhelp32Snapshot, Process32FirstW, Process32NextW, PROCESSENTRY32W, TH32CS_SNAPPROCESS,
+        CreateToolhelp32Snapshot, Process32FirstW, Process32NextW, PROCESSENTRY32W,
+        TH32CS_SNAPPROCESS,
     },
     winbase::LookupPrivilegeValueA,
     winnt::{
@@ -86,76 +81,73 @@ impl RunningInjector {
         let dll_path_size = (dll_path.len() + 1) * mem::size_of::<u16>();
 
         let process_handle;
-        unsafe {
-            if let Err(e) = get_debug_privilege() {
-                return Err(e);
-            }
-            process_handle = OpenProcess(PROCESS_ALL_ACCESS, FALSE, self.process_id);
+
+        if let Err(e) = get_debug_privilege() {
+            return Err(e);
         }
+        process_handle = OpenProcess(PROCESS_ALL_ACCESS, FALSE, self.process_id);
 
         if process_handle.is_null() || process_handle == INVALID_HANDLE_VALUE {
             return Err(SyringeError::ProcessNotFound);
         }
 
         let path_address;
-        unsafe {
-            // Alloc memory and write path to its address
-            path_address = VirtualAllocEx(
-                process_handle,
-                ptr::null_mut(),
-                dll_path_size,
-                MEM_COMMIT,
-                PAGE_READWRITE,
-            );
 
-            if path_address.is_null() {
-                return Err(SyringeError::AllocFailed);
-            }
+        // Alloc memory and write path to its address
+        path_address = VirtualAllocEx(
+            process_handle,
+            ptr::null_mut(),
+            dll_path_size,
+            MEM_COMMIT,
+            PAGE_READWRITE,
+        );
 
-            let wpm_successful = WriteProcessMemory(
-                process_handle,
-                path_address,
-                win32_wstring(dll_path).as_ptr() as *mut _,
-                dll_path_size,
-                ptr::null_mut(),
-            );
-
-            if wpm_successful == FALSE {
-                return Err(SyringeError::WriteMemoryFailure);
-            }
-
-            // Get LoadLibraryW address, should be the same as the address in memory of the remote process
-            let kernel32_name = win32_wstring("Kernel32.dll");
-            let loadlibraryw_name = CString::new("LoadLibraryW").expect("CString::new() failed");
-            let loadlibrary_address = GetProcAddress(
-                GetModuleHandleW(kernel32_name.as_ptr()),
-                loadlibraryw_name.as_ptr(),
-            );
-
-            if loadlibrary_address.is_null() {
-                return Err(SyringeError::CreateThreadFailure);
-            }
-
-            let remote_thread = CreateRemoteThread(
-                process_handle,
-                ptr::null_mut(),
-                0,
-                Some(std::mem::transmute::<*mut _, LPThreadStartRoutineFn>(
-                    loadlibrary_address,
-                )),
-                path_address,
-                0,
-                ptr::null_mut(),
-            );
-
-            if remote_thread.is_null() {
-                return Err(SyringeError::CreateThreadFailure);
-            }
+        if path_address.is_null() {
+            return Err(SyringeError::AllocFailed);
         }
 
-        unsafe {
-            CloseHandle(process_handle);
+        let wpm_successful = WriteProcessMemory(
+            process_handle,
+            path_address,
+            win32_wstring(dll_path).as_ptr() as *mut _,
+            dll_path_size,
+            ptr::null_mut(),
+        );
+
+        if wpm_successful == FALSE {
+            return Err(SyringeError::WriteMemoryFailure);
         }
+
+        // Get LoadLibraryW address, should be the same as the address in memory of the remote process
+        let kernel32_name = win32_wstring("Kernel32.dll");
+        let loadlibraryw_name = CString::new("LoadLibraryW").expect("CString::new() failed");
+        let loadlibrary_address = GetProcAddress(
+            GetModuleHandleW(kernel32_name.as_ptr()),
+            loadlibraryw_name.as_ptr(),
+        );
+
+        if loadlibrary_address.is_null() {
+            return Err(SyringeError::CreateThreadFailure);
+        }
+
+        let remote_thread = CreateRemoteThread(
+            process_handle,
+            ptr::null_mut(),
+            0,
+            Some(std::mem::transmute::<*mut _, LPThreadStartRoutineFn>(
+                loadlibrary_address,
+            )),
+            path_address,
+            0,
+            ptr::null_mut(),
+        );
+
+        if remote_thread.is_null() {
+            return Err(SyringeError::CreateThreadFailure);
+        }
+
+        CloseHandle(process_handle);
+
         Ok(())
     }
 }
@@ -232,7 +224,7 @@ fn get_pid_from_name(name: &str) -> Option<DWORD> {
 
                     // Check for match
                     if name.to_lowercase() == current_exe_name.to_lowercase() {
-                        return Some(process.th32ProcessID)
+                        return Some(process.th32ProcessID);
                     }
                 }
 
