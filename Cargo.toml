@@ -1,0 +1,11 @@
+[package]
+name = "syringe"
+version = "0.1.0"
+authors = [""]
+edition = "2018"
+
+[dependencies]
+thiserror = "1"
+winapi = { version = "0.3", features = ["ntdef", "handleapi", "errhandlingapi", "tlhelp32", "processthreadsapi", "securitybaseapi", "winbase", "handleapi", "libloaderapi", "memoryapi"] }
+structopt = "0.3.20"
+dunce = "1"
